@@ -25,11 +25,13 @@ jobs:
       run: sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
 
     - name: Build with Gradle
-      run: gradle assembleDebug --no-daemon
+      # التعديل هنا: هيدخل جوه فولدر app ويبني من جواه مباشرة
+      run: |
+        gradle -p app assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: floppa-manager-apk
-        # تأكدنا إن المسار ده هو اللي السيرفر هيدور فيه
+        # هيلم أي ملف APK يطلع في أي مجلد فرعي
         path: "**/*.apk"
