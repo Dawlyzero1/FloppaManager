@@ -18,20 +18,28 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Patch Namespace and Configs
-      # الخطوة دي بتصلح ملف build.gradle بتاعك وبتنشئ الملفات الناقصة في خطوة واحدة
+    - name: Final Emergency Patch
       run: |
-        # إضافة namespace لو مش موجود
+        # AndroidX
+        echo "android.useAndroidX=true" > gradle.properties
+        echo "android.enableJetifier=true" >> gradle.properties
+        echo "org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8" >> gradle.properties
+        
+        # Namespace
         if ! grep -q "namespace" app/build.gradle; then
           sed -i '/android {/a \    namespace "com.shadow.eternalsiren"' app/build.gradle
         fi
         
-        # إنشاء ملفات الإدارة الناقصة
-        echo "include ':app'" > settings.gradle
+        # settings.gradle
+        if [ ! -f settings.gradle ]; then
+          echo "include ':app'" > settings.gradle
+        fi
+        
+        # root build.gradle
         cat <<EOF > build.gradle
         buildscript {
             repositories { google(); mavenCentral() }
-            dependencies { 
+            dependencies {
                 classpath 'com.android.tools.build:gradle:8.2.0'
                 classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0"
             }
@@ -41,19 +49,19 @@ jobs:
         }
         EOF
 
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v3
-      with:
-        gradle-version: 8.2
-
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
     - name: Install NDK
       run: sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
 
+    - name: Generate Gradle Wrapper
+      run: |
+        gradle wrapper --gradle-version 8.2
+        chmod +x gradlew
+
     - name: Build Debug APK
-      run: gradle :app:assembleDebug --no-daemon
+      run: ./gradlew :app:assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
