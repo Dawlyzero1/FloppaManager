@@ -10,16 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4 # تحديث لـ v4
+    - uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v4 # تحديث لـ v4
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3 # تحديث لـ v3
+      uses: android-actions/setup-android@v3
 
     - name: Install NDK
       run: sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
@@ -28,7 +28,8 @@ jobs:
       run: gradle assembleDebug --no-daemon
 
     - name: Upload APK
-      uses: actions/upload-artifact@v4 # ده أهم تحديث عشان يحل الخطأ اللي ظهرلك
+      uses: actions/upload-artifact@v4
       with:
         name: floppa-manager-apk
-        path: app/build/outputs/apk/debug/app-debug.apk
+        # تأكدنا إن المسار ده هو اللي السيرفر هيدور فيه
+        path: "**/*.apk"
