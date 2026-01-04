@@ -19,7 +19,6 @@ jobs:
         distribution: 'temurin'
 
     - name: Create Missing Config Files
-      # الخطوة دي بتصنع الملفات اللي السيرفر بيدور عليها ومش لاقيها
       run: |
         cat <<EOF > settings.gradle
         pluginManagement {
@@ -53,6 +52,12 @@ jobs:
         }
         EOF
 
+    - name: Setup Gradle
+      # الخطوة دي هي السر! بنجبر السيرفر يستخدم إصدار 8.2 بدل 9
+      uses: gradle/gradle-build-action@v3
+      with:
+        gradle-version: 8.2
+
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
@@ -60,6 +65,7 @@ jobs:
       run: sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
 
     - name: Build with Gradle
+      # هنستخدم gradlew اللي السيرفر هينزله بالإصدار الصح
       run: gradle assembleDebug --no-daemon
 
     - name: Upload APK
