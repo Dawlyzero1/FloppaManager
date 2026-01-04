@@ -18,21 +18,26 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Ultimate Manifest and Config Fix
+    - name: Ultimate Final Patch
       run: |
-        # 1. حل مشكلة android:exported في المانيفست
+        # 1. تصليح خطأ الـ CMake (مسح أول سطر لو كان تعليق غلط)
+        if [ -f "app/src/main/cpp/CMakeLists.txt" ]; then
+          sed -i 's/\/\///g' app/src/main/cpp/CMakeLists.txt
+        fi
+
+        # 2. حل مشكلة android:exported في المانيفست
         sed -i 's/<activity/<activity android:exported="true"/g' app/src/main/AndroidManifest.xml
         
-        # 2. تفعيل AndroidX
+        # 3. تفعيل AndroidX
         echo "android.useAndroidX=true" > gradle.properties
         echo "android.enableJetifier=true" >> gradle.properties
         
-        # 3. ضبط الـ Namespace
+        # 4. ضبط الـ Namespace
         if ! grep -q "namespace" app/build.gradle; then
           sed -i '/android {/a \    namespace "com.shadow.eternalsiren"' app/build.gradle
         fi
         
-        # 4. إنشاء ملفات الإدارة
+        # 5. إنشاء ملفات الإدارة
         echo "include ':app'" > settings.gradle
         cat <<EOF > build.gradle
         buildscript {
