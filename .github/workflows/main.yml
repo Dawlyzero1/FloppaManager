@@ -18,15 +18,16 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Fix App Build File
-      # الخطوة دي بتضيف السطر اللي السيرفر بيشكي منه (namespace)
+    - name: Patch Namespace and Configs
+      # الخطوة دي بتصلح ملف build.gradle بتاعك وبتنشئ الملفات الناقصة في خطوة واحدة
       run: |
-        sed -i "6i \ \ \ \ namespace 'com.shadow.eternalsiren'" app/build.gradle
-
-    - name: Create Essential Configs
-      run: |
-        echo "include ':app'" > settings.gradle
+        # إضافة namespace لو مش موجود
+        if ! grep -q "namespace" app/build.gradle; then
+          sed -i '/android {/a \    namespace "com.shadow.eternalsiren"' app/build.gradle
+        fi
         
+        # إنشاء ملفات الإدارة الناقصة
+        echo "include ':app'" > settings.gradle
         cat <<EOF > build.gradle
         buildscript {
             repositories { google(); mavenCentral() }
