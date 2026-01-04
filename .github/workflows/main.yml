@@ -18,19 +18,21 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Pre-build Setup
+    - name: Ultimate Manifest and Config Fix
       run: |
-        # تفعيل AndroidX والقضاء على مشاكل الذاكرة
+        # 1. حل مشكلة android:exported في المانيفست
+        sed -i 's/<activity/<activity android:exported="true"/g' app/src/main/AndroidManifest.xml
+        
+        # 2. تفعيل AndroidX
         echo "android.useAndroidX=true" > gradle.properties
         echo "android.enableJetifier=true" >> gradle.properties
-        echo "org.gradle.jvmargs=-Xmx2048m" >> gradle.properties
         
-        # ضبط الـ Namespace يدوياً لضمان عدم نسيانه
+        # 3. ضبط الـ Namespace
         if ! grep -q "namespace" app/build.gradle; then
           sed -i '/android {/a \    namespace "com.shadow.eternalsiren"' app/build.gradle
         fi
         
-        # إنشاء ملفات الإدارة الأساسية
+        # 4. إنشاء ملفات الإدارة
         echo "include ':app'" > settings.gradle
         cat <<EOF > build.gradle
         buildscript {
@@ -51,14 +53,12 @@ jobs:
     - name: Install NDK
       run: sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
 
-    - name: Gradle Build (Fixed Version)
-      # هنا السر: هنستخدم الأكشن الرسمي اللي بينزل Gradle 8.2 كنسخة مستقلة تماماً
+    - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: 8.2
 
     - name: Build Debug APK
-      # الآن ننفذ البناء باستخدام النسخة اللي نزلناها في الخطوة السابقة
       run: gradle :app:assembleDebug --no-daemon
 
     - name: Upload APK
