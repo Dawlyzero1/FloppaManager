@@ -18,42 +18,29 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Create Missing Config Files
+    - name: Fix App Build File
+      # الخطوة دي بتضيف السطر اللي السيرفر بيشكي منه (namespace)
       run: |
-        cat <<EOF > settings.gradle
-        pluginManagement {
-            repositories {
-                google()
-                mavenCentral()
-                gradlePluginPortal()
-            }
-        }
-        dependencyResolutionManagement {
-            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        rootProject.name = "FloppaManager"
-        include ':app'
-        EOF
+        sed -i "6i \ \ \ \ namespace 'com.shadow.eternalsiren'" app/build.gradle
 
+    - name: Create Essential Configs
+      run: |
+        echo "include ':app'" > settings.gradle
+        
         cat <<EOF > build.gradle
         buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
+            repositories { google(); mavenCentral() }
+            dependencies { 
                 classpath 'com.android.tools.build:gradle:8.2.0'
                 classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0"
             }
         }
+        allprojects {
+            repositories { google(); mavenCentral() }
+        }
         EOF
 
     - name: Setup Gradle
-      # الخطوة دي هي السر! بنجبر السيرفر يستخدم إصدار 8.2 بدل 9
       uses: gradle/gradle-build-action@v3
       with:
         gradle-version: 8.2
@@ -64,12 +51,11 @@ jobs:
     - name: Install NDK
       run: sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
 
-    - name: Build with Gradle
-      # هنستخدم gradlew اللي السيرفر هينزله بالإصدار الصح
-      run: gradle assembleDebug --no-daemon
+    - name: Build Debug APK
+      run: gradle :app:assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: floppa-manager-apk
-        path: "**/*.apk"
+        path: "**/build/outputs/apk/debug/*.apk"
