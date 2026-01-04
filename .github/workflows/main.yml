@@ -18,28 +18,24 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Final Emergency Patch
+    - name: Pre-build Setup
       run: |
-        # AndroidX
+        # تفعيل AndroidX والقضاء على مشاكل الذاكرة
         echo "android.useAndroidX=true" > gradle.properties
         echo "android.enableJetifier=true" >> gradle.properties
-        echo "org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8" >> gradle.properties
+        echo "org.gradle.jvmargs=-Xmx2048m" >> gradle.properties
         
-        # Namespace
+        # ضبط الـ Namespace يدوياً لضمان عدم نسيانه
         if ! grep -q "namespace" app/build.gradle; then
           sed -i '/android {/a \    namespace "com.shadow.eternalsiren"' app/build.gradle
         fi
         
-        # settings.gradle
-        if [ ! -f settings.gradle ]; then
-          echo "include ':app'" > settings.gradle
-        fi
-        
-        # root build.gradle
+        # إنشاء ملفات الإدارة الأساسية
+        echo "include ':app'" > settings.gradle
         cat <<EOF > build.gradle
         buildscript {
             repositories { google(); mavenCentral() }
-            dependencies {
+            dependencies { 
                 classpath 'com.android.tools.build:gradle:8.2.0'
                 classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0"
             }
@@ -55,13 +51,15 @@ jobs:
     - name: Install NDK
       run: sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
 
-    - name: Generate Gradle Wrapper
-      run: |
-        gradle wrapper --gradle-version 8.2
-        chmod +x gradlew
+    - name: Gradle Build (Fixed Version)
+      # هنا السر: هنستخدم الأكشن الرسمي اللي بينزل Gradle 8.2 كنسخة مستقلة تماماً
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: 8.2
 
     - name: Build Debug APK
-      run: ./gradlew :app:assembleDebug --no-daemon
+      # الآن ننفذ البناء باستخدام النسخة اللي نزلناها في الخطوة السابقة
+      run: gradle :app:assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
